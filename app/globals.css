@@ -41,8 +41,6 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
-  --container-padding: 2rem;
-  --container-2xl: 1400px;
 }
 
 :root {
@@ -78,6 +76,16 @@
   --sidebar-accent-foreground: oklch(0.21 0.006 285.885);
   --sidebar-border: oklch(0.92 0.004 286.32);
   --sidebar-ring: oklch(0.705 0.015 286.067);
+
+  --sh-identifier: #354150;
+  --sh-keyword: #f47067;
+  --sh-string: #00a99a;
+  --sh-class: #8d85ff;
+  --sh-property: #4e8fdf;
+  --sh-entity: #6eafad;
+  --sh-jsxliterals: #bf7db6;
+  --sh-sign: #8996a3;
+  --sh-comment: #a19595;
 }
 
 .dark {
@@ -112,36 +120,35 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.552 0.016 285.938);
+
+  --sh-class: #4c97f8;
+  --sh-identifier: white;
+  --sh-keyword: #f47067;
+  --sh-string: #0fa295;
 }
 
 @layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
+  * { @apply border-border outline-ring/50; }
+  body { @apply bg-background text-foreground; }
+  .title { @apply font-serif text-3xl font-bold underline decoration-border/75 decoration-2 underline-offset-8; }
+  .prose pre { @apply overflow-x-auto rounded-lg bg-accent px-5 py-4 text-sm; }
+  .prose code { @apply rounded-lg px-1 py-0.5; }
+  .prose pre code { @apply p-0 text-sm; }
+  .prose code span { @apply font-medium; }
+  .prose h1 { @apply text-4xl font-bold my-8; }
+  .prose h2 { @apply text-3xl font-semibold my-6; }
+  .prose h3 { @apply text-2xl font-semibold my-5; }
+  .prose h4 { @apply text-xl font-semibold my-4; }
+  .prose h5 { @apply text-lg font-medium my-3; }
+  .prose h6 { @apply text-base font-medium my-2; }
+  .prose p { @apply my-4 leading-relaxed; }
+  .prose ul { @apply list-disc ml-6 my-4; }
+  .prose ol { @apply list-decimal ml-6 my-4; }
+  .prose li { @apply my-1; }
+  .prose blockquote { @apply border-l-4 border-muted pl-4 italic my-4; }
+  .prose img { @apply rounded-lg my-4; }
+  .prose a { @apply text-primary underline hover:text-primary-foreground; }
 
-  .title {
-    @apply font-serif text-3xl font-bold underline decoration-border/75 decoration-2 underline-offset-8;
-  }
-
-  .prose pre {
-    @apply overflow-x-auto rounded-lg bg-accent px-5 py-4 text-sm;
-  }
-
-  .prose code {
-    @apply rounded-lg px-1 py-0.5;
-  }
-
-  .prose pre code {
-    @apply p-0;
-    line-height: 1.75;
-  }
-
-  .prose code span {
-    @apply font-medium;
-  }
 }
 
 @layer utilities {
@@ -149,15 +156,4 @@
   .text-foreground { color: var(--color-foreground); }
   .font-sans { font-family: var(--font-sans); }
   .font-serif { font-family: var(--font-serif); }
-  
-  .container {
-    margin-left: auto;
-    margin-right: auto;
-    padding-left: var(--container-padding);
-    padding-right: var(--container-padding);
-    max-width: 100%;
-  }
-  @media (min-width: 1536px) {
-    .container { max-width: var(--container-2xl); }
-  }
 }
