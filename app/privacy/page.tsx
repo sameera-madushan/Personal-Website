@@ -10,7 +10,7 @@ export default function PrivacyPolicyPage() {
 
         <h2 className='text-xl font-semibold mt-8 mb-4'>Information I Collect</h2>
         <p className='mb-4'>
-          I may collect personal information that you voluntarily provide, such as your name and email address when you contact me via the website's contact form.
+          I may collect personal information that you voluntarily provide, such as your name and email address when you contact me via the website&#39;s contact form.
         </p>
 
         <h2 className='text-xl font-semibold mt-8 mb-4'>How I Use Your Information</h2>
