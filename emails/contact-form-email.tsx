@@ -1,10 +1,5 @@
 import { Html, Head, Body, Text, Section } from '@react-email/components';
-
-interface ContactFormEmailProps {
-  name: string;
-  email: string;
-  message: string;
-}
+import { ContactFormEmailProps } from '@/types/emails';
 
 export const ContactFormEmail = ({
   name,
