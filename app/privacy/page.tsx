@@ -1,7 +1,7 @@
 export default function PrivacyPolicyPage() {
   return (
     <section className='pb-24 pt-40'>
-      <div className='mx-auto max-w-3xl'>
+      <div className='mx-auto max-w-3xl px-4'>
         <h1 className='title mb-12'>Privacy Policy</h1>
 
         <p className='mb-4'>

@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { sendEmail } from '@/lib/actions'
 import { Toaster } from "@/components/ui/sonner"
+import { useEffect, useRef, useState } from 'react'
 
 type Inputs = z.infer<typeof ContactFormSchema>
 
@@ -19,26 +20,78 @@ export default function ContactForm() {
     register,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors, isSubmitting }
   } = useForm<Inputs>({
     resolver: zodResolver(ContactFormSchema),
     defaultValues: {
       name: '',
       email: '',
-      message: ''
+      message: '',
+      cfTurnstileResponse: ''
     }
-  })
+  });
+
+  const turnstileRef = useRef<HTMLDivElement>(null);
+  const [turnstileLoaded, setTurnstileLoaded] = useState(false);
+  const [turnstileWidgetId, setTurnstileWidgetId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!document.getElementById('cf-turnstile-script')) {
+      const script = document.createElement('script');
+      script.id = 'cf-turnstile-script';
+      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
+      script.async = true;
+      script.onload = () => setTurnstileLoaded(true);
+      document.head.appendChild(script);
+    } else {
+      setTurnstileLoaded(true);
+    }
+
+    return () => {
+      if (turnstileWidgetId && window.turnstile) {
+        window.turnstile.remove(turnstileWidgetId);
+      }
+    };
+  }, [turnstileWidgetId]);
+
+  useEffect(() => {
+    if (turnstileLoaded && turnstileRef.current && !turnstileWidgetId) {
+      const widgetId = window.turnstile.render(turnstileRef.current, {
+        sitekey: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!,
+        callback: (token: string) => {
+          setValue('cfTurnstileResponse', token);
+        },
+        'expired-callback': () => {
+          setValue('cfTurnstileResponse', '');
+          if (turnstileWidgetId) {
+            window.turnstile.reset(turnstileWidgetId);
+          }
+        },
+        'error-callback': () => {
+          setValue('cfTurnstileResponse', '');
+        }
+      });
+      setTurnstileWidgetId(widgetId);
+    }
+  }, [turnstileLoaded, setValue, turnstileWidgetId]);
 
   const processForm: SubmitHandler<Inputs> = async data => {
-    const result = await sendEmail(data)
+    const result = await sendEmail(data);
 
     if (result?.error) {
-      toast.error('An error occurred! Please try again.')
-      return
+      toast.error('An error occurred! Please try again.');
+      if (turnstileWidgetId && window.turnstile) {
+        window.turnstile.reset(turnstileWidgetId);
+      }
+      return;
     }
 
-    toast.success('Message sent successfully!')
-    reset()
+    toast.success('Message sent successfully!');
+    reset();
+    if (turnstileWidgetId && window.turnstile) {
+      window.turnstile.reset(turnstileWidgetId);
+    }
   }
 
   return (
@@ -100,11 +153,22 @@ export default function ContactForm() {
                 </p>
               )}
             </div>
+
+            {/* Turnstile Widget */}
+            <div className='sm:col-span-2'>
+              <div ref={turnstileRef} />
+              <input type="hidden" {...register('cfTurnstileResponse')} />
+              {errors.cfTurnstileResponse?.message && (
+                <p className='ml-1 mt-2 text-sm text-rose-400'>
+                  {errors.cfTurnstileResponse.message}
+                </p>
+              )}
+            </div>
           </div>
           <div className='mt-6'>
             <Button
               type='submit'
-              disabled={isSubmitting}
+              disabled={isSubmitting || !turnstileLoaded}
               className='w-full disabled:opacity-50'
             >
               {isSubmitting ? 'Submitting...' : 'Submit'}
