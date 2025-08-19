@@ -1,23 +1,9 @@
 import fs from 'fs'
 import path from 'path'
 import matter from 'gray-matter'
+import { Post, PostMetadata } from '@/types/posts'
 
 const rootDirectory = path.join(process.cwd(), 'content', 'posts')
-
-export type Post = {
-  metadata: PostMetadata
-  content: string
-}
-
-export type PostMetadata = {
-  title?: string
-  summary?: string
-  image?: string
-  author?: string
-  publishedAt?: string
-  slug: string
-}
-
 export async function getPostBySlug(slug: string): Promise<Post | null> {
   try {
     const filePath = path.join(rootDirectory, `${slug}.mdx`)
@@ -28,7 +14,6 @@ export async function getPostBySlug(slug: string): Promise<Post | null> {
     return null
   }
 }
-
 export async function getPosts(limit?: number): Promise<PostMetadata[]> {
   const files = fs.readdirSync(rootDirectory)
 
@@ -48,7 +33,6 @@ export async function getPosts(limit?: number): Promise<PostMetadata[]> {
 
   return posts
 }
-
 export function getPostMetadata(filepath: string): PostMetadata {
   const slug = filepath.replace(/\.mdx$/, '')
   const filePath = path.join(rootDirectory, filepath)
