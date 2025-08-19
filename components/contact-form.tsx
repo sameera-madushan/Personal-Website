@@ -96,7 +96,7 @@ export default function ContactForm() {
 
   return (
     <section className='relative isolate'>
-      <Toaster position="top-right"/>
+      <Toaster />
       {/* Form */}
       <div className='relative'>
         <form
