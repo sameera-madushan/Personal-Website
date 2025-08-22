@@ -8,17 +8,21 @@ import { ContactFormEmail } from '@/emails/contact-form-email'
 type ContactFormInputs = z.infer<typeof ContactFormSchema>
 
 const resend = new Resend(process.env.RESEND_API_KEY)
+
 export async function sendEmail(data: ContactFormInputs) {
+
   const result = ContactFormSchema.safeParse(data)
 
-  if (result.error) {
+  if (!result.success) {
     return { error: result.error.format() }
   }
 
-  const turnstileData = new URLSearchParams();
-  turnstileData.append('secret', process.env.TURNSTILE_SECRET_KEY!);
-  turnstileData.append('response', result.data.cfTurnstileResponse);
-  turnstileData.append('remoteip', '')
+  const { name, email, message, cfTurnstileResponse } = result.data
+
+  // Verify Turnstile token
+  const turnstileData = new URLSearchParams()
+  turnstileData.append('secret', process.env.TURNSTILE_SECRET_KEY!)
+  turnstileData.append('response', cfTurnstileResponse)
 
   try {
     const turnstileResponse = await fetch(
@@ -27,30 +31,25 @@ export async function sendEmail(data: ContactFormInputs) {
         method: 'POST',
         body: turnstileData,
       }
-    );
+    )
 
-    const turnstileResult = await turnstileResponse.json();
-
+    const turnstileResult = await turnstileResponse.json()
     if (!turnstileResult.success) {
-      return { error: 'CAPTCHA verification failed' };
+      return { error: 'CAPTCHA verification failed' }
     }
 
-    const { name, email, message } = result.data;
-    const emailComponent = ContactFormEmail({ name, email, message });
+    const emailComponent = ContactFormEmail({ name, email, message })
 
-    const { data: emailData, error: emailError } = await resend.emails.send({
+    await resend.emails.send({
       from: 'hello@sameeramadushan.me',
       to: ['sameera.xyz.me@gmail.com'],
-      subject: 'Contact form submission',
-      react: emailComponent
+      subject: 'Contact Form Submission',
+      react: emailComponent,
     })
 
-    if (!emailData || emailError) {
-      throw new Error('Failed to send email')
-    }
-
     return { success: true }
-  } catch (error) {
-    return { error }
+  } catch (error: any) {
+    console.error('Error sending contact form email:', error)
+    return { error: error.message || 'Failed to send email' }
   }
 }

@@ -10,5 +10,5 @@ export const ContactFormSchema = z.object({
     .min(1, { message: 'Email is required.' })
     .email('Invalid email.'),
   message: z.string().min(1, { message: 'Message is required.' }),
-  cfTurnstileResponse: z.string().min(1, { message: 'Please complete the CAPTCHA.' })
+  cfTurnstileResponse: z.string().min(1, { message: 'Please verify you are human' }),
 })
