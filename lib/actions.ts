@@ -8,6 +8,7 @@ import { ContactFormEmail } from '@/emails/contact-form-email'
 type ContactFormInputs = z.infer<typeof ContactFormSchema>
 
 const resend = new Resend(process.env.RESEND_API_KEY)
+const secret = process.env.NEXT_PRIVATE_TURNSTILE_SECRET_KEY!
 
 export async function sendEmail(data: ContactFormInputs) {
 
@@ -19,12 +20,12 @@ export async function sendEmail(data: ContactFormInputs) {
 
   const { name, email, message, cfTurnstileResponse } = result.data
 
-  // Verify Turnstile token
   const turnstileData = new URLSearchParams()
-  turnstileData.append('secret', process.env.TURNSTILE_SECRET_KEY!)
+  turnstileData.append('secret', secret)
   turnstileData.append('response', cfTurnstileResponse)
 
   try {
+    
     const turnstileResponse = await fetch(
       'https://challenges.cloudflare.com/turnstile/v0/siteverify',
       {
