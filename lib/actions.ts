@@ -48,8 +48,13 @@ export async function sendEmail(data: ContactFormInputs) {
     })
 
     return { success: true }
-  } catch (error: any) {
-    console.error('Error sending contact form email:', error)
-    return { error: error.message || 'Failed to send email' }
+  } catch (error: unknown) {
+    let errorMessage = 'Failed to send email'
+
+    if (error instanceof Error) {
+      errorMessage = error.message
+    }
+
+    return { error: errorMessage }
   }
 }
