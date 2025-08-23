@@ -1,11 +1,11 @@
 import Link from 'next/link'
 import Image from 'next/image'
-
 import { formatDate } from '@/lib/utils'
 import MDXContent from '@/components/mdx-content'
 import { getPosts, getPostBySlug } from '@/lib/posts'
 import { ArrowLeftIcon } from '@radix-ui/react-icons'
 import { notFound } from 'next/navigation'
+import Comments from '@/components/comments';
 
 export async function generateStaticParams() {
   const posts = await getPosts()
@@ -61,6 +61,8 @@ export default async function Post({
         <main className='prose mt-16 dark:prose-invert'>
           <MDXContent source={content} />
         </main>
+
+        <Comments />
       </div>
     </section>
   )

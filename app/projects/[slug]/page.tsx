@@ -6,6 +6,7 @@ import MDXContent from '@/components/mdx-content'
 import { ArrowLeftIcon } from '@radix-ui/react-icons'
 import { getProjectBySlug, getProjects } from '@/lib/projects'
 import { notFound } from 'next/navigation'
+import Comments from '@/components/comments';
 import { UsersRound, UserRound, CodeXml, Link as LinkIcon } from 'lucide-react'
 
 export async function generateStaticParams() {
@@ -113,6 +114,8 @@ export default async function Project({
         <main className='prose mt-7 dark:prose-invert'>
           <MDXContent source={content} />
         </main>
+
+        <Comments />
       </div>
     </section>
   )
