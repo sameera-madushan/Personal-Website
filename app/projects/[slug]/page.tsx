@@ -1,13 +1,17 @@
-import type { ReactNode } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import type { Metadata } from "next"
+import type { ReactNode } from 'react'
 import { formatDate } from '@/lib/utils'
+import { Props } from '@/types/projects'
+import { notFound } from 'next/navigation'
+import Comments from '@/components/comments';
 import MDXContent from '@/components/mdx-content'
 import { ArrowLeftIcon } from '@radix-ui/react-icons'
 import { getProjectBySlug, getProjects } from '@/lib/projects'
-import { notFound } from 'next/navigation'
-import Comments from '@/components/comments';
 import { UsersRound, UserRound, CodeXml, Link as LinkIcon } from 'lucide-react'
+
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL!
 
 export async function generateStaticParams() {
   const projects = await getProjects()
@@ -16,11 +20,41 @@ export async function generateStaticParams() {
   return slugs
 }
 
-export default async function Project({
-  params
-}: {
-  params: Promise<{ slug: string }>
-}) {
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+
+  const { slug } = await params
+  const project = await getProjectBySlug(slug)
+
+  if (!project) {
+    return {
+      title: "Project Not Found",
+      description: "This project could not be found."
+    }
+  }
+
+  const { title, summary, image } = project.metadata
+
+  return {
+    title,
+    description: summary,
+    openGraph: {
+      title,
+      description: summary,
+      url: `${siteUrl}/projects/${slug}`,
+      images: image ? [`${siteUrl}${image}`] : [],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description: summary,
+      images: image ? [`${siteUrl}${image}`] : [],
+    },
+  }
+}
+
+
+export default async function Project({ params }: Props ) {
+
   const { slug } = await params
   const project = await getProjectBySlug(slug)
 

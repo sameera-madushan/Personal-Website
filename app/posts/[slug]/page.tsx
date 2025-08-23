@@ -1,11 +1,15 @@
 import Link from 'next/link'
 import Image from 'next/image'
+import type { Metadata } from "next"
+import { Props } from '@/types/posts'
 import { formatDate } from '@/lib/utils'
+import { notFound } from 'next/navigation'
+import Comments from '@/components/comments';
 import MDXContent from '@/components/mdx-content'
 import { getPosts, getPostBySlug } from '@/lib/posts'
 import { ArrowLeftIcon } from '@radix-ui/react-icons'
-import { notFound } from 'next/navigation'
-import Comments from '@/components/comments';
+
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL!
 
 export async function generateStaticParams() {
   const posts = await getPosts()
@@ -14,11 +18,41 @@ export async function generateStaticParams() {
   return slugs
 }
 
-export default async function Post({
-  params,
-}: {
-  params: Promise<{ slug: string }>
-}) {
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+
+  const { slug } = await params
+  const post = await getPostBySlug(slug)
+
+  if (!post) {
+    return {
+      title: "Post Not Found",
+      description: "This post could not be found."
+    }
+  }
+
+  const { title, summary, image } = post.metadata
+
+  return {
+    title,
+    description: summary,
+    openGraph: {
+      title,
+      description: summary,
+      url: `${siteUrl}/projects/${slug}`,
+      images: image ? [`${siteUrl}${image}`] : [],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description: summary,
+      images: image ? [`${siteUrl}${image}`] : [],
+    },
+  }
+}
+
+
+export default async function Post({ params }: Props ) {
+
   const { slug } = await params
   const post = await getPostBySlug(slug)
 
