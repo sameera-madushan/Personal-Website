@@ -1,3 +1,24 @@
+import type { Metadata } from 'next'
+
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL!
+
+export const metadata: Metadata = {
+  title: "Privacy Policy",
+  description: "Read the privacy policy of Sameera Madushan's website. Learn how your data is collected, used, and protected.",
+  openGraph: {
+    title: "Privacy Policy | Sameera Madushan",
+    description: "Read the privacy policy of Sameera Madushan's website. Learn how your data is collected, used, and protected.",
+    url: `${siteUrl}/privacy-policy`,
+    images: [`${siteUrl}/images/og-cover.png`],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Privacy Policy | Sameera Madushan",
+    description: "Read the privacy policy of Sameera Madushan's website. Learn how your data is collected, used, and protected.",
+    images: [`${siteUrl}/images/og-cover.png`],
+  },
+}
+
 export default function PrivacyPolicyPage() {
   return (
     <section className='pb-24 pt-40'>

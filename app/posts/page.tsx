@@ -1,5 +1,25 @@
 import { getPosts } from '@/lib/posts'
 import PostsWithSearch from '@/components/posts-with-search'
+import type { Metadata } from 'next'
+
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL!
+
+export const metadata: Metadata = {
+  title: "Posts",
+  description: "Read the latest blog posts and articles by Sameera Madushan on software development, modern technologies, and cybersecurity.",
+  openGraph: {
+    title: "Blog Posts | Sameera Madushan",
+    description: "Read the latest blog posts and articles by Sameera Madushan on software development, modern technologies, and cybersecurity.",
+    url: `${siteUrl}/posts`,
+    images: [`${siteUrl}/images/og-cover.png`],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Blog Posts | Sameera Madushan",
+    description: "Read the latest blog posts and articles by Sameera Madushan on software development, modern technologies, and cybersecurity.",
+    images: [`${siteUrl}/images/og-cover.png`],
+  },
+}
 
 export default async function PostsPage() {
   const posts = await getPosts()

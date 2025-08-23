@@ -1,4 +1,4 @@
-import Intro from "@/components/intro";
+import Intro from "@/components/intro"
 import RecentPosts from '@/components/recent-posts'
 import RecentProjects from '@/components/recent-projects'
 
