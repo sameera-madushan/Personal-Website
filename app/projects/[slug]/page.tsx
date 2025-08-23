@@ -1,11 +1,12 @@
+import type { ReactNode } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-
 import { formatDate } from '@/lib/utils'
 import MDXContent from '@/components/mdx-content'
 import { ArrowLeftIcon } from '@radix-ui/react-icons'
 import { getProjectBySlug, getProjects } from '@/lib/projects'
 import { notFound } from 'next/navigation'
+import { UsersRound, UserRound, CodeXml, Link as LinkIcon } from 'lucide-react'
 
 export async function generateStaticParams() {
   const projects = await getProjects()
@@ -27,7 +28,7 @@ export default async function Project({
   }
 
   const { metadata, content } = project
-  const { title, image, author, publishedAt } = metadata
+  const { title, image, author, publishedAt, repository, live, type } = metadata
 
   return (
     <section className='pb-24 pt-32'>
@@ -56,9 +57,60 @@ export default async function Project({
           <p className='mt-3 text-xs text-muted-foreground'>
             {author} / {formatDate(publishedAt ?? '')}
           </p>
+
+          {(repository || live || type) && (
+            <div className='mt-2 flex items-center gap-2 text-xs text-muted-foreground'>
+              {[
+                live && (
+                  <a
+                    key="live"
+                    href={live}
+                    target='_blank'
+                    rel='noopener noreferrer'
+                    className='hover:text-foreground flex items-center gap-1 transition-colors'
+                  >
+                    <LinkIcon className='h-5 w-5' />
+                    <span>Live Site</span>
+                  </a>
+                ),
+                repository && (
+                  <a
+                    key="repo"
+                    href={repository}
+                    target='_blank'
+                    rel='noopener noreferrer'
+                    className='hover:text-foreground flex items-center gap-1 transition-colors'
+                  >
+                    <CodeXml className='h-5 w-5' />
+                    <span>Source Code</span>
+                  </a>
+                ),
+                type && (
+                  <div key="type" className='flex items-center gap-1'>
+                    {type === 'personal' ? (
+                      <UserRound className='h-4 w-4' />
+                    ) : (
+                      <UsersRound className='h-4 w-4' />
+                    )}
+                    <span>
+                      {type === 'personal' ? 'Personal Project' : `Associated with ${type}`}
+                    </span>
+                  </div>
+                ),
+              ]
+              .filter(Boolean)
+              .reduce((prev, curr, idx) => {
+                if (idx === 0) return [curr];
+                return [...prev, <span key={`sep-${idx}`}>|</span>, curr];
+              }, [] as ReactNode[])}
+            </div>
+          )}
+
+
+          <hr className='my-7 border-t border-muted-foreground' />
         </header>
 
-        <main className='prose mt-16 dark:prose-invert'>
+        <main className='prose mt-7 dark:prose-invert'>
           <MDXContent source={content} />
         </main>
       </div>
