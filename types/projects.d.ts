@@ -14,3 +14,8 @@ export type ProjectMetadata = {
   live?: string
   type?: string
 }
+
+export type Props = {
+  params: Promise<{ slug: string }>
+}
+ 

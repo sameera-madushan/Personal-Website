@@ -11,3 +11,7 @@ export interface PostMetadata {
   slug: string;
   tags?: string[];
 }
+
+export type Props = {
+  params: Promise<{ slug: string }>
+}
