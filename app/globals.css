@@ -128,26 +128,65 @@
 }
 
 @layer base {
-  * { @apply border-border outline-ring/50; }
-  body { @apply bg-background text-foreground; }
-  .title { @apply font-serif text-3xl font-bold underline decoration-border/75 decoration-2 underline-offset-8; }
-  .prose pre { @apply overflow-x-auto rounded-lg bg-accent px-5 py-4 text-sm; }
-  .prose code { @apply rounded-lg px-1 py-0.5; }
-  .prose pre code { @apply p-0 text-sm; }
-  .prose code span { @apply font-medium; }
-  .prose h1 { @apply text-4xl font-bold my-8; }
-  .prose h2 { @apply text-3xl font-semibold my-6; }
-  .prose h3 { @apply text-2xl font-semibold my-5; }
-  .prose h4 { @apply text-xl font-semibold my-4; }
-  .prose h5 { @apply text-lg font-medium my-3; }
-  .prose h6 { @apply text-base font-medium my-2; }
-  .prose p { @apply my-4 leading-relaxed; }
-  .prose ul { @apply list-disc ml-6 my-4; }
-  .prose ol { @apply list-decimal ml-6 my-4; }
-  .prose li { @apply my-1; }
-  .prose blockquote { @apply border-l-4 border-muted pl-4 italic my-4; }
-  .prose img { @apply rounded-lg my-4; }
-  .prose a { @apply text-primary underline hover:text-primary-foreground; }
+  * { 
+    @apply border-border outline-ring/50; 
+  }
+  body { 
+    @apply bg-background text-foreground; 
+  }
+  .title { 
+    @apply font-serif text-3xl font-bold underline decoration-border/75 decoration-2 underline-offset-8; 
+  }
+  .prose pre { 
+    @apply overflow-x-auto rounded-lg bg-accent px-5 py-4 text-sm; 
+    line-height: 1;
+  }
+  .prose code { 
+    @apply rounded-lg px-1 py-0.5; 
+    line-height: inherit;
+  }
+  .prose pre code { 
+    @apply p-0 text-sm; 
+    line-height: inherit;
+  }
+  .prose code span { 
+    @apply font-medium; 
+    line-height: inherit;
+  }
+  .prose h1 { 
+    @apply text-4xl font-bold my-8; 
+  }
+  .prose h2 { 
+    @apply text-3xl font-semibold my-6; 
+  }
+  .prose h3 { 
+    @apply text-2xl font-semibold my-5; 
+  }
+  .prose h4 { 
+    @apply text-xl font-semibold my-4; 
+  }
+  .prose h5 { 
+    @apply text-lg font-medium my-3; 
+  }
+  .prose h6 { 
+    @apply text-base font-medium my-2; 
+  }
+  .prose p { 
+    @apply my-4 leading-relaxed text-justify; 
+  }
+  .prose ul { 
+    @apply list-disc ml-6 my-4; 
+  }
+  .prose ol { 
+    @apply list-decimal ml-6 my-4; 
+  }
+  .prose li { 
+    @apply my-1; 
+  }
+  .prose a {
+    @apply text-primary underline decoration-2 underline-offset-2 
+          hover:text-primary/80 transition-colors;
+  }
 
 }
 
