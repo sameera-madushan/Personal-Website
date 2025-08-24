@@ -8,20 +8,24 @@ import Comments from '@/components/comments';
 import MDXContent from '@/components/mdx-content'
 import { getPosts, getPostBySlug } from '@/lib/posts'
 import { ArrowLeftIcon } from '@radix-ui/react-icons'
+import LanguageSwitch from '@/components/language-switch'
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL!
 
 export async function generateStaticParams() {
   const posts = await getPosts()
-  const slugs = posts.map(post => ({ slug: post.slug }))
+  const langs = ['en', 'si']
 
-  return slugs
+  const params = posts.flatMap(post => 
+    langs.map(lang => ({ slug: post.slug, lang }))
+  )
+
+  return params
 }
-
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
-  const { slug } = await params
-  const post = await getPostBySlug(slug)
+  const { slug, lang } = await params
+  const post = await getPostBySlug(slug, lang)
 
   if (!post) {
     return {
@@ -53,8 +57,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function Post({ params }: Props ) {
 
-  const { slug } = await params
-  const post = await getPostBySlug(slug)
+  const { slug, lang } = await params
+  const post = await getPostBySlug(slug, lang)
 
   if (!post) {
     notFound()
@@ -85,12 +89,14 @@ export default async function Post({ params }: Props ) {
           </div>
         )}
 
-        <header>
+        <header className="flex items-center justify-between mt-6">
           <h1 className='title'>{title}</h1>
-          <p className='mt-3 text-xs text-muted-foreground'>
-            {author} / {formatDate(publishedAt ?? '')}
-          </p>
+          <LanguageSwitch slug={slug} currentLang={lang} />
         </header>
+
+        <p className='mt-3 text-xs text-muted-foreground'>
+          {author} / {formatDate(publishedAt ?? '')}
+        </p>
 
         <main className='prose mt-16 dark:prose-invert'>
           <MDXContent source={content} />

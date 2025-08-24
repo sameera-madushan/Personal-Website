@@ -4,39 +4,44 @@ import matter from 'gray-matter'
 import { Post, PostMetadata } from '@/types/posts'
 
 const rootDirectory = path.join(process.cwd(), 'content', 'posts')
-export async function getPostBySlug(slug: string): Promise<Post | null> {
+
+export async function getPostBySlug(slug: string, lang = 'en'): Promise<Post | null> {
   try {
-    const filePath = path.join(rootDirectory, `${slug}.mdx`)
+    const filePath = path.join(rootDirectory, slug, `${lang}.mdx`)
     const fileContent = fs.readFileSync(filePath, { encoding: 'utf8' })
     const { data, content } = matter(fileContent)
-    return { metadata: { ...data, slug }, content }
+    return { metadata: { ...data, slug, lang }, content }
   } catch {
     return null
   }
 }
-export async function getPosts(limit?: number): Promise<PostMetadata[]> {
-  const files = fs.readdirSync(rootDirectory)
 
-  const posts = files
-    .map(file => getPostMetadata(file))
+export async function getPosts(limit?: number): Promise<PostMetadata[]> {
+  const slugs = fs.readdirSync(rootDirectory).filter((file) =>
+    fs.statSync(path.join(rootDirectory, file)).isDirectory()
+  )
+
+  const posts = slugs
+    .map((slug) => {
+      const filePath = path.join(rootDirectory, slug, 'en.mdx')
+      if (!fs.existsSync(filePath)) return null
+
+      const fileContent = fs.readFileSync(filePath, 'utf8')
+      const { data } = matter(fileContent)
+      return { ...data, slug, lang: 'en' } as PostMetadata
+    })
+    .filter((post): post is PostMetadata => post !== null)
     .sort((a, b) => {
-      if (new Date(a.publishedAt ?? '') < new Date(b.publishedAt ?? '')) {
-        return 1
-      } else {
-        return -1
-      }
+      return new Date(b.publishedAt ?? '').getTime() - new Date(a.publishedAt ?? '').getTime()
     })
 
-  if (limit) {
-    return posts.slice(0, limit)
-  }
-
+  if (limit) return posts.slice(0, limit)
   return posts
 }
-export function getPostMetadata(filepath: string): PostMetadata {
-  const slug = filepath.replace(/\.mdx$/, '')
-  const filePath = path.join(rootDirectory, filepath)
+
+export function getPostMetadata(slug: string, lang = 'en'): PostMetadata {
+  const filePath = path.join(rootDirectory, slug, `${lang}.mdx`)
   const fileContent = fs.readFileSync(filePath, { encoding: 'utf8' })
   const { data } = matter(fileContent)
-  return { ...data, slug }
+  return { ...data, slug, lang }
 }

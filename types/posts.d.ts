@@ -10,8 +10,9 @@ export interface PostMetadata {
   publishedAt?: string;
   slug: string;
   tags?: string[];
+  lang?: string;
 }
 
 export type Props = {
-  params: Promise<{ slug: string }>
+  params: Promise<{ slug: string; lang: string }>
 }
