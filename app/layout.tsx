@@ -34,7 +34,7 @@ export const metadata: Metadata = {
     siteName: "Sameera Madushan | Portfolio & Blog",
     images: [
       {
-        url: `${siteUrl}/images/og-cover.png`,
+        url: `${siteUrl}/images/og-images/og_opengraph.png`,
         alt: "Sameera Madushan Portfolio & Blog",
       },
     ],
@@ -44,7 +44,7 @@ export const metadata: Metadata = {
     title: "Sameera Madushan | Portfolio & Blog",
     description:
       "A portfolio and blog by Sameera Madushan, a software engineer passionate about building scalable and secure solutions. View my projects and read my blogs for in-depth articles on development, modern technologies, and cybersecurity.",
-    images: [`${siteUrl}/images/og-cover.png`],
+    images: [`${siteUrl}/images/og-images/og_twitter.png`],
   },
 }
 
