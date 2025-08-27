@@ -1,6 +1,7 @@
 import { getPosts } from '@/lib/posts'
-import PostsWithSearch from '@/components/posts-with-search'
 import type { Metadata } from 'next'
+import AnimatedSection from '@/components/animated-section'
+import PostsWithSearch from '@/components/posts-with-search'
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL!
 
@@ -26,10 +27,14 @@ export default async function PostsPage() {
 
   return (
     <section className='pb-24 pt-40'>
-      <div className='mx-auto max-w-3xl px-4'>
-        <h1 className='title mb-12'>Posts</h1>
+      <div className='mx-auto max-w-3xl px-4 space-y-12'>
+        <AnimatedSection delay={0}>
+          <h1 className='title mb-12'>Posts</h1>
+        </AnimatedSection>
 
-        <PostsWithSearch posts={posts} />
+        <AnimatedSection delay={0.2}>
+          <PostsWithSearch posts={posts} />
+        </AnimatedSection>
       </div>
     </section>
   )
