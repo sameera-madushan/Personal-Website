@@ -1,6 +1,7 @@
+import type { Metadata } from 'next'
 import Projects from '@/components/projects'
 import { getProjects } from '@/lib/projects'
-import type { Metadata } from 'next'
+import AnimatedSection from '@/components/animated-section'
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL!
 
@@ -27,9 +28,13 @@ export default async function ProjectsPage() {
   return (
     <section className='pb-24 pt-40'>
       <div className='mx-auto max-w-3xl px-4'>
-        <h1 className='title mb-12'>Projects</h1>
+        <AnimatedSection delay={0}>
+          <h1 className='title mb-12'>Projects</h1>
+        </AnimatedSection>
 
-        <Projects projects={projects} />
+        <AnimatedSection delay={0.2}>
+          <Projects projects={projects} />
+        </AnimatedSection>
       </div>
     </section>
   )

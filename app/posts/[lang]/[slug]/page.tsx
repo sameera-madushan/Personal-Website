@@ -9,6 +9,7 @@ import MDXContent from '@/components/mdx-content'
 import { getPosts, getPostBySlug } from '@/lib/posts'
 import { ArrowLeftIcon } from '@radix-ui/react-icons'
 import LanguageSwitch from '@/components/language-switch'
+import AnimatedSection from '@/components/animated-section'
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL!
 
@@ -79,29 +80,35 @@ export default async function Post({ params }: Props ) {
           <span>Back to posts</span>
         </Link>
 
-        {image && (
-          <div className='relative mb-6 h-96 w-full overflow-hidden rounded-lg'>
-            <Image
-              src={image}
-              alt={title || ''}
-              className='object-cover'
-              fill
-            />
-          </div>
-        )}
+         <AnimatedSection delay={0}>
+          {image && (
+            <div className='relative mb-6 h-96 w-full overflow-hidden rounded-lg'>
+              <Image
+                src={image}
+                alt={title || ''}
+                className='object-cover'
+                fill
+              />
+            </div>
+          )}
+        </AnimatedSection>
 
-        <header className="flex items-center justify-between mt-6">
-          <h1 className='title'>{title}</h1>
-          <LanguageSwitch slug={slug} currentLang={lang} />
-        </header>
+        <AnimatedSection delay={0.1}>
+          <header className="flex items-center justify-between mt-6">
+            <h1 className='title'>{title}</h1>
+            <LanguageSwitch slug={slug} currentLang={lang} />
+          </header>
 
-        <p className='mt-3 text-xs text-muted-foreground'>
-          {author} / {formatDate(publishedAt ?? '')}
-        </p>
+          <p className='mt-3 text-xs text-muted-foreground'>
+            {author} / {formatDate(publishedAt ?? '')}
+          </p>
+        </AnimatedSection>
 
-        <main className='prose mt-16 dark:prose-invert'>
-          <MDXContent source={content} />
-        </main>
+        <AnimatedSection delay={0.2}>
+          <main className='prose mt-16 dark:prose-invert'>
+            <MDXContent source={content} />
+          </main>
+        </AnimatedSection>
 
         <Comments />
       </div>
