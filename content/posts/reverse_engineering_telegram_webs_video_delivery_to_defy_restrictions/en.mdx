@@ -1,0 +1,381 @@
+---
+  title: Reverse-Engineering Telegram Web's Video Delivery to Defy Restrictions
+  summary: Explore how Telegram Web streams video, why client-side restrictions can’t stop it, and how to reverse-engineer the process.
+  image: /images/posts/reverse_engineering_telegram_webs_video_delivery_to_defy_restrictions/cover.png
+  author: 'Sameera Madushan'
+  publishedAt: '2025-09-07'
+---
+
+Client-side restrictions on web platforms are often an exercise in security through obscurity rather than true cryptographic protection. A prime example is Telegram Web's 'Restrict Saving Content' feature. While it removes the download button from the UI, it cannot prevent the video data from being transmitted to the client's browser.
+
+This is due to a simple, unavoidable reason. For content to be played, it must be decrypted and assembled in the browser's memory. Hiding the download button doesn’t stop this. The actual video data is still fully present and accessible.
+
+This article will deconstruct how Telegram Web delivers video content using chunked streaming via the Media Source API. By analyzing network requests created during playback, we can reverse-engineer the streaming process and even write a script to reassemble the original video file. 
+
+Before we jump into inspecting the video delivery in the browser's DevTools, we need to understand the key technologies that make streaming video possible on the web.
+
+## The Building Blocks of Modern Video Streaming
+
+### [Media Source API](https://developer.mozilla.org/en-US/docs/Web/API/Media_Source_Extensions_API)
+
+The Media Source API, formally known as Media Source Extensions (MSE) is a JavaScript API that allows you to generate dynamic media streams for playback in HTML5 `<audio>` and `<video>` elements. Instead of downloading the entire video at once, the browser can play small pieces or “chunks” as they arrive. This is how streaming services achieve smooth playback without requiring the user to wait for the full file to download.
+
+### [Byte Serving and Partial Content](https://en.wikipedia.org/wiki/Byte_serving)
+
+Byte serving refers to requesting only a portion of a file from the server instead of the entire file. This is essential for streaming because the browser only needs small segments of the video at a time.
+
+When a server supports byte serving, it can respond with Partial Content (HTTP status code 206) instead of sending the full file (200 OK). Each chunk of the video is requested separately and then reassembled in memory for playback.
+
+### [The Range Request Header](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Range)
+
+The browser uses the Range header in HTTP requests to tell the server which part of the file it needs. For example:
+
+```
+Range: bytes=0-999
+```
+
+This tells the server: “Send me the first 1000 bytes of this file.” Later requests might ask for `bytes=1000-1999`, and so on. This mechanism enables smooth streaming and allows seeking without downloading the full video.
+
+### How It All Fits Together
+
+The Media Source API's JavaScript code first determines which part of the video is needed next and directs the browser to make an HTTP request for that specific byte range. The server then fulfills this request with a 206 Partial Content response, delivering only the requested bytes. Upon arrival, the Media Source API code takes this individual chunk of video data and appends it to the video element's buffer for immediate playback. This loop continues automatically, constantly fetching chunks ahead of the viewer's position to ensure smooth playback, and can even adapt to network conditions by switching to lower-quality video chunks if needed.
+
+With these concepts in mind, we can now examine how Telegram Web delivers video. Let’s explore the mechanism in the browser's DevTools.
+
+## Inspecting the Video Element
+
+The first step is to examine the video player itself. Using the browser's inspector (Right-click → Inspect on the video), we find the `<video>` element:
+
+![inspecting_the_video _element](/images/posts/reverse_engineering_telegram_webs_video_delivery_to_defy_restrictions/inspecting_the_video_element.png)
+
+```
+<video 
+  playsinline="true" 
+  autoplay="" 
+  src="stream/%7B%22dcId%22%3A5%2C%22location%22%3A%7B%22_%22%3A%22inputDocumentFileLocation%22%2C%22id%22%3A%226262552253077394856%22%2C%22access_hash%22%3A%22-3469643809161727297%22%2C%22file_reference%22%3A%5B5%2C0%2C0%2C0%2C0%2C136%2C161%2C124%2C198%2C0%2C0%2C0%2C97%2C104%2C188%2C105%2C81%2C129%2C182%2C81%2C19%2C237%2C105%2C143%2C22%2C66%2C68%2C163%2C150%2C235%2C136%2C158%2C37%5D%7D%2C%22size%22%3A168783171%2C%22mimeType%22%3A%22video%2Fmp4%22%2C%22fileName%22%3A%22video1751181395.mp4%22%7D" 
+  class="ckin__video">
+</video>
+```
+
+At first glance, this src attribute looks like a confusing jumble of characters. This is by design. It's the first layer of obscurity. However, this is not a direct link to a media file. Let's decode what it actually represents.
+
+![decoding_the_src_attribute](/images/posts/reverse_engineering_telegram_webs_video_delivery_to_defy_restrictions/decoding_the_src_attribute.png)
+
+```
+stream/{
+  "dcId": 5,
+  "location": {
+    "_": "inputDocumentFileLocation",
+    "id": "6262552253077394856",
+    "access_hash": "-3469643809161727297",
+    "file_reference": [
+      5,
+      0,
+      0,
+      0,
+      0,
+      136,
+      161,
+      124,
+      198,
+      0,
+      0,
+      0,
+      97,
+      104,
+      188,
+      105,
+      81,
+      129,
+      182,
+      81,
+      19,
+      237,
+      105,
+      143,
+      22,
+      66,
+      68,
+      163,
+      150,
+      235,
+      136,
+      158,
+      37
+    ]
+  },
+  "size": 168783171,
+  "mimeType": "video/mp4",
+  "fileName": "video1751181395.mp4"
+}
+```
+
+Decoding the entire string reveals a structured JSON object containing all the necessary metadata for Telegram's client to locate and stream the file.
+
+## Analyzing Network Requests
+
+The decoded src attribute revealed the instructions, but the real action happens in the Network tab. When we play the video and filter for media requests, we see the continuous, automated execution of the streaming loop.
+
+A flood of requests will appear, each one fetching a new chunk of the video. Let's examine a single one of these requests in detail it tells the whole story.
+
+![analyzing_network_requests](/images/posts/reverse_engineering_telegram_webs_video_delivery_to_defy_restrictions/analyzing_network_requests.png)
+
+- Request URL
+
+```
+https://web.telegram.org/k/stream/%7B%22dcId%22%3A5%2C%22location%22%3A%7B%22_%22%3A%22inputDocumentFileLocation%22%2C%22id%22%3A%226262552253077394856%22%2C%22access_hash%22%3A%22-3469643809161727297%22%2C%22file_reference%22%3A%5B5%2C0%2C0%2C0%2C0%2C136%2C161%2C124%2C198%2C0%2C0%2C0%2C97%2C104%2C188%2C105%2C81%2C129%2C182%2C81%2C19%2C237%2C105%2C143%2C22%2C66%2C68%2C163%2C150%2C235%2C136%2C158%2C37%5D%7D%2C%22size%22%3A168783171%2C%22mimeType%22%3A%22video%2Fmp4%22%2C%22fileName%22%3A%22video1751181395.mp4%22%7D
+```
+This is the same, long, URL-encoded JSON object we found in the `<video>` element's src. The client is using this exact string as the endpoint for its HTTP requests.
+
+- Critical Request Headers
+
+![critical_request_headers](/images/posts/reverse_engineering_telegram_webs_video_delivery_to_defy_restrictions/critical_request_headers.png)
+
+```
+Range: bytes=0-
+```
+
+This header initiates the byte serving. In this form, it means "send me the video from byte 0 to the end." The server will typically honor this by sending the first chunk, often defaulting to a manageable size like 1MB.
+
+- Critical Response Headers
+
+```
+Status Code: 206 Partial Content (from Service Worker)
+```
+
+This is the definitive proof of byte serving. The server is not sending the whole file; it's delivering a slice of it. The note (from Service Worker) confirms that Telegram's client-side code is intercepting and managing these requests.
+
+```
+content-range: bytes 0-1048575/168783171
+```
+
+This header is the server's direct response to the Range header. It confirms this response contains the first 1,048,576 bytes (exactly 1 MB) of the video file. The total size of the complete video file is 168,783,171 bytes (about 168 MB). This matches the size value in the video element's JSON metadata.
+
+```
+content-length: 1048576
+```
+
+This header confirms the size of the current response is 1,048,576 bytes (1 MB), perfectly matching the content-range.
+
+```
+content-type: video/mp4
+```
+
+The server is sending raw MP4 video data. This chunk isn't a manifest or a metadata file. It is the actual first segment of the video itself, ready to be fed directly into the video decoder.
+
+## The Streaming Loop in Action
+
+This single request is just the beginning. As the video plays, you will see a continuous sequence of nearly identical requests. Each new request will have an updated Range header, asking for the next logical chunk of bytes. Each will receive a corresponding 206 Partial Content response with the next segment of the video. This is the Media Source API driven loop we described earlier, happening in real-time.
+
+## Building the Script
+
+The network analysis proves the video data is accessible. Now, we can write a script that mimics the Telegram Web client's behavior to fetch all chunks and reassemble them. The following self-executing function can be run in the browser's console while a video is playing on Telegram Web.
+
+### Step 1: Locate the Video Source
+
+```
+// Step 1: Get the video element
+const video = document.querySelector(".ckin__player video") || document.querySelector("video");
+if (!video) {
+    logger("No video element found on this page.");
+    return;
+}
+
+const videoUrl = video.currentSrc;
+if (!videoUrl) {
+    logger("Video src not found.");
+    return;
+}
+logger("Video URL found: " + videoUrl);
+```
+
+The script first finds the `<video>` element on the page. It looks for a player with the class `.ckin__player` (which Telegram Web uses) or falls back to any video element. 
+
+It then extracts the `currentSrc` property. To understand why we use `video.currentSrc` instead of `video.src`, we must recognize that the `<video>` element has two different sources of truth.
+
+- `video.src`: This reflects the initial src attribute as it was written in the original HTML or set by JavaScript. It is a static value that does not change, even if the browser internally changes what it is playing.
+
+- `video.currentSrc`: This is a live, read-only property that returns the absolute URL of the currently playing media resource. It tells you what the browser is actually using right now.
+
+![video_src_vs_src](/images/posts/reverse_engineering_telegram_webs_video_delivery_to_defy_restrictions/video_src_vs_src.png)
+
+The `src` attribute remains the original, unhelpful stream/ command intended for Telegram's internal scripts. Meanwhile, `currentSrc` provides the fully resolved, absolute HTTPS URL that is the functional endpoint for the active stream. This distinction is everything for our script. The URL from currentSrc is the gateway to the streaming session.
+
+When we send a fetch() request to this URL:
+
+- It is intercepted by the same service worker that is handling the live video playback.
+
+- This service worker is already authenticated and knows how to translate the request into the correct API calls to Telegram's servers, seamlessly handling the file_reference, access_hash, and Range headers in the background.
+
+- It returns the raw, decrypted video chunks directly, just as it does for the `<video>` element itself.
+
+### Step 2: Manage the Download and Fetch Chunks
+
+With the correct URL obtained, the script now initializes the variables needed to manage the download process and begins fetching the video data piece by piece.
+
+```
+// Step 2: Prepare download
+let blobs = [];        // Array to store each downloaded chunk as a Blob
+let nextOffset = 0;    // The starting byte for the next Range request
+let totalSize = null;  // The full size of the video file (unknown at start)
+const fileName = "telegram-video.mp4"; // Default filename for the download
+```
+
+### Step 3: The Recursive Fetch Loop
+
+The core of the script is the fetchNextPart function, which runs repeatedly, requesting sequential pieces of the file until the download is complete.
+
+```
+// Step 3: Fetch video in chunks
+const fetchNextPart = () => {
+    fetch(videoUrl, {
+        method: "GET",
+        headers: totalSize ? { Range: `bytes=${nextOffset}-` } : {}
+    })
+```
+
+The function uses the fetch API to call the active video URL. The magic is in the headers:
+
+On the first call, `totalSize` is null, so no Range header is sent. This asks the server to start from the beginning. The server will typically respond with the first chunk and, crucially, information about the total file size.
+
+On every subsequent call, `totalSize` is known, so the header `Range: bytes=${nextOffset}-` is added. This tells the server: "Send me all the bytes starting from position nextOffset." This mirrors the exact behavior we observed in the Network tab.
+
+```
+.then(res => {
+    if (![200, 206].includes(res.status)) throw new Error("Unexpected HTTP status: " + res.status);
+
+    // Determine total size from Content-Range if available
+    if (!totalSize && res.status === 206) {
+        const cr = res.headers.get("Content-Range"); // e.g., bytes 0-999999/12345678
+        totalSize = parseInt(cr.split("/")[1]);
+    } else if (!totalSize) {
+        totalSize = parseInt(res.headers.get("Content-Length"));
+    }
+    return res.blob();
+})
+```
+
+When the response comes back, the script first checks for a successful status code (200 OK or 206 Partial Content). It then performs a critical task: discovering the total file size.
+
+From `Content-Range`: If this is the first response and it's a 206, the Content-Range header (e.g., bytes 0-1048575/168783171) contains the total size after the slash (/). This is the most reliable method.
+
+From `Content-Length` (Fallback): If for some reason the first response is a 200 OK, the script falls back to the Content-Length header, which would represent the size of the entire file.
+
+Finally, the response body is converted to a Blob object, which represents the chunk of video data.
+
+```
+.then(blob => {
+    blobs.push(blob);          // Add the new chunk to our collection
+    nextOffset += blob.size;   // Update the pointer for the next request
+    logger(`Downloaded ${nextOffset}${totalSize ? "/" + totalSize : ""} bytes`);
+
+    // Check if we have more to download
+    if (totalSize && nextOffset < totalSize) {
+        fetchNextPart(); // If yes, run this function again
+    } else {
+        // Step 4: Assembly and download - This happens right here inside the else block.
+        const finalBlob = new Blob(blobs, { type: "video/mp4" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(finalBlob);
+        a.download = fileName;
+        a.click();
+        logger("Download complete: " + fileName);
+    }
+})
+.catch(err => logger("Error: " + err));
+};
+```
+
+For each chunk received, the script stores it and updates the progress untill `nextOffset` is no longer less than `totalSize`. The crucial part is the else block, which is 
+
+### Step 4: The Final Assembly and Download. 
+
+```
+} else {
+    // Step 4: Assembly and download - This happens right here inside the else block.
+    const finalBlob = new Blob(blobs, { type: "video/mp4" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(finalBlob);
+    a.download = fileName;
+    a.click();
+    logger("Download complete: " + fileName);
+}
+```
+
+This logic is triggered when the download is complete (nextOffset is no longer less than totalSize).
+
+It combines all the individual Blobs in the blobs[] array into a single, final Blob object. The `{ type: "video/mp4" }` option is crucial as it ensures the file is correctly identified as an MP4 video. Then It creates an invisible `<a>` element. It sets the link's href to a temporary URL that points to the complete video Blob. It then sets the download attribute with the filename and programmatically simulates a click on the link. This triggers the browser's native download dialog. The browser automatically handles revoking the temporary object URL after the download, freeing up memory.
+
+```
+(() => {
+
+    const logger = (msg) => console.log("[TelDL]", msg);
+
+    const video = document.querySelector(".ckin__player video") || document.querySelector("video");
+    if (!video) {
+        logger("No video element found on this page.");
+        return;
+    }
+
+    const videoUrl = video.currentSrc;
+    if (!videoUrl) {
+        logger("Video src not found.");
+        return;
+    }
+    logger("Video URL found: " + videoUrl);
+
+    let blobs = [];
+    let nextOffset = 0;
+    let totalSize = null;
+    const fileName = "telegram-video.mp4";
+
+    const fetchNextPart = () => {
+        fetch(videoUrl, {
+            method: "GET",
+            headers: totalSize ? { Range: `bytes=${nextOffset}-` } : {}
+        })
+        .then(res => {
+            if (![200, 206].includes(res.status)) throw new Error("Unexpected HTTP status: " + res.status);
+
+            if (!totalSize && res.status === 206) {
+                const cr = res.headers.get("Content-Range");
+                totalSize = parseInt(cr.split("/")[1]);
+            } else if (!totalSize) {
+                totalSize = parseInt(res.headers.get("Content-Length"));
+            }
+
+            return res.blob();
+        })
+        .then(blob => {
+            blobs.push(blob);
+            nextOffset += blob.size;
+            logger(`Downloaded ${nextOffset}${totalSize ? "/" + totalSize : ""} bytes`);
+
+            if (totalSize && nextOffset < totalSize) {
+                fetchNextPart();
+            } else {
+                const finalBlob = new Blob(blobs, { type: "video/mp4" });
+                const a = document.createElement("a");
+                a.href = URL.createObjectURL(finalBlob);
+                a.download = fileName;
+                a.click();
+                logger("Download complete: " + fileName);
+            }
+        })
+        .catch(err => logger("Error: " + err));
+    };
+
+    fetchNextPart();
+})();
+
+```
+
+## Ethical Considerations
+
+It is important to state clearly that all testing and reverse-engineering for this article was performed exclusively on my own personally uploaded video content. This approach ensures that no one's privacy was violated and no copyright was infringed during the creation of this educational material.
+
+This process highlights a design flaw in the implementation of client-side restrictions. However, respecting copyright and the privacy of others is paramount. This knowledge should not be used to download content without explicit permission, which would violate Telegram's terms of service and potentially infringe on copyright law.
+
+## Final Thought
+
+Telegram's approach is effective against casual users but offers no protection against a determined individual with basic web development knowledge. True security would require never sending the data to the client at all which is incompatible with streaming video. This case study serves as a powerful reminder that if you can see it on your screen, you can save it. The only truly secure content is content that is never delivered.
