@@ -10,18 +10,28 @@ import { Cross2Icon } from '@radix-ui/react-icons'
 
 export default function PostsWithSearch({ posts }: { posts: PostMetadata[] }) {
   const [query, setQuery] = useState('')
-  const filtered = posts.filter(post =>
-    post.title?.toLowerCase().includes(query.toLowerCase())
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+
+  const allCategories = Array.from(
+    new Set(posts.flatMap(post => post.categories ?? []))
   )
 
-  const isFiltered = query.length > 0
+  const filtered = posts.filter(post => {
+    const matchesQuery = post.title?.toLowerCase().includes(query.toLowerCase())
+    const matchesCategory = selectedCategory ? post.categories?.includes(selectedCategory) : true
+    return matchesQuery && matchesCategory
+  })
+
+  const isFiltered = query.length > 0 || selectedCategory !== null
+
   function resetFilter() {
     setQuery('')
+    setSelectedCategory(null)
   }
 
   return (
     <div>
-      <div className='mb-12 flex items-center gap-3'>
+      <div className='mb-4 flex items-center gap-3'>
         <Input
           type='text'
           placeholder='Search posts...'
@@ -40,6 +50,21 @@ export default function PostsWithSearch({ posts }: { posts: PostMetadata[] }) {
             <Cross2Icon className='ml-2 h-4 w-4' />
           </Button>
         )}
+      </div>
+
+      <div className='mb-6 flex flex-wrap gap-2'>
+        {allCategories.map(category => (
+          <Button
+            key={category}
+            size='sm'
+            variant={selectedCategory === category ? 'default' : 'outline'}
+            onClick={() =>
+              setSelectedCategory(selectedCategory === category ? null : category)
+            }
+          >
+            {category}
+          </Button>
+        ))}
       </div>
 
       <Posts posts={filtered} />

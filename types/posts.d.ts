@@ -11,6 +11,7 @@ export interface PostMetadata {
   slug: string;
   tags?: string[];
   lang?: string;
+  categories?: string[]
 }
 
 export type Props = {
