@@ -1,3 +1,4 @@
+import Head from 'next/head'
 import Link from 'next/link'
 import Image from 'next/image'
 import type { Metadata } from "next"
@@ -70,48 +71,71 @@ export default async function Post({ params }: Props ) {
   const { title, image, author, publishedAt } = metadata
 
   return (
-    <section className='pb-24 pt-32'>
-      <div className='mx-auto max-w-3xl px-4'>
-        <Link
-          href='/posts'
-          className='mb-8 inline-flex items-center gap-2 text-sm font-light text-muted-foreground transition-colors hover:text-foreground'
-        >
-          <ArrowLeftIcon className='h-5 w-5' />
-          <span>Back to posts</span>
-        </Link>
+    <>
+      <Head>
+        <link
+          rel="canonical"
+          href={`https://sameeramadushan.me/posts/${lang}/${slug}`}
+        />
 
-         <AnimatedSection delay={0}>
-          {image && (
-            <div className='relative mb-6 h-96 w-full overflow-hidden rounded-lg'>
-              <Image
-                src={image}
-                alt={title || ''}
-                className='object-cover'
-                fill
-              />
-            </div>
-          )}
-        </AnimatedSection>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Article",
+              "headline": title,
+              "author": author,
+              "datePublished": publishedAt,
+              "image": image ? [`https://sameeramadushan.me${image}`] : [],
+              "mainEntityOfPage": `https://sameeramadushan.me/posts/${lang}/${slug}`,
+            }),
+          }}
+        />
+      </Head>
+      <section className='pb-24 pt-32'>
+        <div className='mx-auto max-w-3xl px-4'>
+          <Link
+            href='/posts'
+            className='mb-8 inline-flex items-center gap-2 text-sm font-light text-muted-foreground transition-colors hover:text-foreground'
+          >
+            <ArrowLeftIcon className='h-5 w-5' />
+            <span>Back to posts</span>
+          </Link>
 
-        <AnimatedSection delay={0.1}>
-          <header className="flex items-center justify-between mt-6">
-            <h1 className='title'>{title}</h1>
-            <LanguageSwitch slug={slug} currentLang={lang} />
-          </header>
+          <AnimatedSection delay={0}>
+            {image && (
+              <div className='relative mb-6 h-96 w-full overflow-hidden rounded-lg'>
+                <Image
+                  src={image}
+                  alt={title || ''}
+                  className='object-cover'
+                  fill
+                />
+              </div>
+            )}
+          </AnimatedSection>
 
-          <p className='mt-3 text-xs text-muted-foreground'>
-            {author} / {formatDate(publishedAt ?? '')}
-          </p>
-        </AnimatedSection>
+          <AnimatedSection delay={0.1}>
+            <header className="flex items-center justify-between mt-6">
+              <h1 className='title'>{title}</h1>
+              <LanguageSwitch slug={slug} currentLang={lang} />
+            </header>
 
-        <AnimatedSection delay={0.2}>
-          <main className='prose mt-16 dark:prose-invert'>
-            <MDXContent source={content} />
-          </main>
-        </AnimatedSection>
+            <p className='mt-3 text-xs text-muted-foreground'>
+              {author} / {formatDate(publishedAt ?? '')}
+            </p>
+          </AnimatedSection>
 
-        <Comments />
-      </div>
-    </section>
+          <AnimatedSection delay={0.2}>
+            <main className='prose mt-16 dark:prose-invert'>
+              <MDXContent source={content} />
+            </main>
+          </AnimatedSection>
+
+          <Comments />
+        </div>
+      </section>
+    </>
   )
 }
