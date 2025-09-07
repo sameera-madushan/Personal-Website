@@ -1,7 +1,7 @@
 ---
   title: Reverse-Engineering Telegram Web's Video Delivery to Defy Restrictions
   summary: Explore how Telegram Web streams video, why client-side restrictions can’t stop it, and how to reverse-engineer the process.
-  image: /images/posts/reverse_engineering_telegram_webs_video_delivery_to_defy_restrictions/cover.png
+  image: /images/posts/reverse-engineering-telegram-webs-video-delivery-to-defy-restrictions/cover.png
   author: 'Sameera Madushan'
   publishedAt: '2025-09-07'
 ---
@@ -46,7 +46,7 @@ With these concepts in mind, we can now examine how Telegram Web delivers video.
 
 The first step is to examine the video player itself. Using the browser's inspector (Right-click → Inspect on the video), we find the `<video>` element:
 
-![inspecting_the_video _element](/images/posts/reverse_engineering_telegram_webs_video_delivery_to_defy_restrictions/inspecting_the_video_element.png)
+![inspecting-the-video-element](/images/posts/reverse-engineering-telegram-webs-video-delivery-to-defy-restrictions/inspecting-the-video-element.png)
 
 ```
 <video 
@@ -59,7 +59,7 @@ The first step is to examine the video player itself. Using the browser's inspec
 
 At first glance, this src attribute looks like a confusing jumble of characters. This is by design. It's the first layer of obscurity. However, this is not a direct link to a media file. Let's decode what it actually represents.
 
-![decoding_the_src_attribute](/images/posts/reverse_engineering_telegram_webs_video_delivery_to_defy_restrictions/decoding_the_src_attribute.png)
+![decoding-the-src-attribute](/images/posts/reverse-engineering-telegram-webs-video-delivery-to-defy-restrictions/decoding-the-src-attribute.png)
 
 ```
 stream/{
@@ -118,7 +118,7 @@ The decoded src attribute revealed the instructions, but the real action happens
 
 A flood of requests will appear, each one fetching a new chunk of the video. Let's examine a single one of these requests in detail it tells the whole story.
 
-![analyzing_network_requests](/images/posts/reverse_engineering_telegram_webs_video_delivery_to_defy_restrictions/analyzing_network_requests.png)
+![analyzing-network-requests](/images/posts/reverse-engineering-telegram-webs-video-delivery-to-defy-restrictions/analyzing-network-requests.png)
 
 - Request URL
 
@@ -129,7 +129,7 @@ This is the same, long, URL-encoded JSON object we found in the `<video>` elemen
 
 - Critical Request Headers
 
-![critical_request_headers](/images/posts/reverse_engineering_telegram_webs_video_delivery_to_defy_restrictions/critical_request_headers.png)
+![critical-request-headers](/images/posts/reverse-engineering-telegram-webs-video-delivery-to-defy-restrictions/critical-request-headers.png)
 
 ```
 Range: bytes=0-
@@ -197,7 +197,7 @@ It then extracts the `currentSrc` property. To understand why we use `video.curr
 
 - `video.currentSrc`: This is a live, read-only property that returns the absolute URL of the currently playing media resource. It tells you what the browser is actually using right now.
 
-![video_src_vs_src](/images/posts/reverse_engineering_telegram_webs_video_delivery_to_defy_restrictions/video_src_vs_src.png)
+![video-src-vs-src](/images/posts/reverse-engineering-telegram-webs-video-delivery-to-defy-restrictions/video-src-vs-src.png)
 
 The `src` attribute remains the original, unhelpful stream/ command intended for Telegram's internal scripts. Meanwhile, `currentSrc` provides the fully resolved, absolute HTTPS URL that is the functional endpoint for the active stream. This distinction is everything for our script. The URL from currentSrc is the gateway to the streaming session.
 
