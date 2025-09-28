@@ -12,9 +12,13 @@ export default function PostsWithSearch({ posts }: { posts: PostMetadata[] }) {
   const [query, setQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
 
-  const allCategories = Array.from(
-    new Set(posts.flatMap(post => post.categories ?? []))
-  )
+  // Build category counts
+  const categoryCounts = posts.reduce((acc, post) => {
+    (post.categories ?? []).forEach(category => {
+      acc[category] = (acc[category] || 0) + 1
+    })
+    return acc
+  }, {} as Record<string, number>)
 
   const filtered = posts.filter(post => {
     const matchesQuery = post.title?.toLowerCase().includes(query.toLowerCase())
@@ -53,7 +57,7 @@ export default function PostsWithSearch({ posts }: { posts: PostMetadata[] }) {
       </div>
 
       <div className='mb-6 flex flex-wrap gap-2'>
-        {allCategories.map(category => (
+        {Object.entries(categoryCounts).map(([category, count]) => (
           <Button
             key={category}
             size='sm'
@@ -62,7 +66,7 @@ export default function PostsWithSearch({ posts }: { posts: PostMetadata[] }) {
               setSelectedCategory(selectedCategory === category ? null : category)
             }
           >
-            {category}
+            {category} ({count})
           </Button>
         ))}
       </div>
