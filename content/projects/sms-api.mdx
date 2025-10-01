@@ -1,0 +1,46 @@
+---
+  title: SMS API
+  summary: A centralized SMS API for compnay clients.
+  image: /images/projects/sms-api/cover.png
+  author: 'Sameera Madushan'
+  publishedAt: '2025-10-01'
+  type: Pramix IT
+---
+
+## Overview
+
+The company I worked with manages many clients who need to send SMS messages to their users. At the time, there was no centralized or robust system for sending and managing SMS messages; each project had its own SMS provider integration, set up separately. To address this, we built a Centralized SMS API along with an admin dashboard, creating a unified platform that makes SMS management more efficient, reliable, and easier to maintain.
+
+
+## Project Goals
+
+The goal of this project was to create a centralized, scalable, and reusable SMS system to serve multiple clients efficiently. Previously, each client had separate integrations with SMS providers, making management, maintenance, and monitoring difficult. This project aimed to provide a unified platform for sending SMS messages, ensuring reliable delivery while simplifying integration for client systems. Additionally, it was designed to improve overall manageability, logging, and monitoring of messages, while reducing redundancy and maintenance overhead across different projects.
+
+## System Architecture
+
+The system flow provides a high-level overview of how SMS requests move through the API. It illustrates the main steps, from receiving a request to sending the message and returning the delivery status to the client.
+
+![Flow Diagram](/images/projects/sms-api/flow.png)
+
+The database structure shows the relationships between the main system entities. The ER diagrams highlight how data is organized and connected, providing a clear overview of storage and management.
+
+![ER Diagram](/images/projects/sms-api/er.png)
+
+## Tech Stack
+
+This project was built using [Laravel](https://laravel.com) for the backend and Blade for the admin dashboard frontend. [MySQL](https://www.mysql.com) was used as the primary database, while [Redis](https://redis.io) was integrated to ensure messages are not sent more than once, preventing duplicate SMS deliveries.
+
+## Features
+
+- **/single endpoint:** Send a message to a single recipient.  
+- **/bulk endpoint:** Send a message to multiple recipients at the same time.  
+- **/otp endpoint:** Send one-time password codes.  
+- **Scheduled messages:** Schedule SMS messages to be sent at a specific date and time. 
+- **Delivery status callback:** Provides SMS delivery status, remaining SMS count, and used SMS count to a specified endpoint.  
+- **API authentication:** Secured using Sanctum-based authentication for all API routes.  
+- **Admin dashboard:** Monitor and manage clients, packages, and services; view SMS logs; and perform administrative tasks. 
+- **Report generation:** Generate reports for billing and other administrative purposes.  
+
+## Learning and Takeaways
+
+This was my first real world Laravel project. Before this, my Laravel experience was mostly limited to tutorials and personal practice. Being assigned to this project as a Laravel developer allowed me to learn and apply Laravel concepts in a practical setting. I gained hands-on experience with building APIs, authentication using Sanctum, integrating external APIs, and managing complex backend logic. I would say that more than 75–80% of my practical Laravel knowledge came from working on this project, making it an invaluable experience in strengthening my backend development skills.
