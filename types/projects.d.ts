@@ -9,6 +9,7 @@ export type ProjectMetadata = {
   image?: string
   author?: string
   publishedAt?: string
+  updatedAt?: string
   slug: string
   repository?: string
   live?: string

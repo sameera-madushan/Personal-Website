@@ -71,7 +71,7 @@ export default async function Post({ params }: Props ) {
   }
 
   const { metadata, content } = post
-  const { title, image, author, publishedAt, summary } = metadata
+  const { title, image, author, publishedAt, summary, updatedAt } = metadata
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -107,7 +107,7 @@ export default async function Post({ params }: Props ) {
           {image && (
             <div className='relative mb-6 h-96 w-full overflow-hidden rounded-lg'>
               <Image
-                src={image}
+                src={`${image}?v=${new Date(updatedAt!).getTime()}`}
                 alt={title || ''}
                 className='object-cover'
                 fill

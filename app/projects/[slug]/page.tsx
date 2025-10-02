@@ -68,7 +68,7 @@ export default async function Project({ params }: Props ) {
   }
 
   const { metadata, content } = project
-  const { title, image, author, publishedAt, repository, live, type, summary } = metadata
+  const { title, image, author, publishedAt, repository, live, type, summary, updatedAt } = metadata
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -106,7 +106,7 @@ export default async function Project({ params }: Props ) {
           {image && (
             <div className='relative mb-6 h-96 w-full overflow-hidden rounded-lg'>
               <Image
-                src={image}
+                src={`${image}?v=${new Date(updatedAt!).getTime()}`}
                 alt={title || ''}
                 className='object-cover'
                 fill
