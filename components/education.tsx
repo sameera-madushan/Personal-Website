@@ -41,8 +41,8 @@ export default function Education() {
                 <Image
                   src={item.crestPath}
                   alt={item.institution + " Logo"}
-                  layout="fill"
-                  objectFit="contain"
+                  fill
+                  className="object-contain"
                 />
               </div>
             )}
