@@ -8,6 +8,7 @@ import { notFound } from 'next/navigation'
 import Comments from '@/components/comments';
 import MDXContent from '@/components/mdx-content'
 import { ArrowLeftIcon } from '@radix-ui/react-icons'
+import LightboxWrapper from "@/components/lightbox-wrapper"
 import AnimatedSection from '@/components/animated-section'
 import { getProjectBySlug, getProjects } from '@/lib/projects'
 import { UsersRound, UserRound, CodeXml, Link as LinkIcon } from 'lucide-react'
@@ -180,6 +181,8 @@ export default async function Project({ params }: Props ) {
             <MDXContent source={content} />
           </main>
         </AnimatedSection>
+
+        <LightboxWrapper />
 
         <Comments />
       </div>
