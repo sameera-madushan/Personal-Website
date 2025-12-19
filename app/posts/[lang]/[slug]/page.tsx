@@ -10,6 +10,7 @@ import { getPosts, getPostBySlug } from '@/lib/posts'
 import { ArrowLeftIcon } from '@radix-ui/react-icons'
 import LanguageSwitch from '@/components/language-switch'
 import AnimatedSection from '@/components/animated-section'
+import LightboxWrapper from "@/components/lightbox-wrapper"
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL!
 
@@ -132,6 +133,8 @@ export default async function Post({ params }: Props ) {
             <MDXContent source={content} />
           </main>
         </AnimatedSection>
+
+        <LightboxWrapper />
 
         <Comments />
       </div>
