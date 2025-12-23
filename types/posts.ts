@@ -7,7 +7,7 @@ export interface PostMetadata {
   summary?: string;
   image?: string;
   author?: string;
-  publishedAt: string;
+  publishedAt?: string;
   updatedAt?: string;
   slug: string;
   tags?: string[];

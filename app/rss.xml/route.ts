@@ -25,7 +25,9 @@ export async function GET(_req: NextRequest) {
       const title = escapeXml(post.title ?? '')
       const description = escapeXml(post.summary ?? '')
       const url = `${CONFIG.siteUrl}/posts/${post.slug}`
-      const pubDate = new Date(post.publishedAt).toUTCString()
+      const pubDate = post.publishedAt
+        ? new Date(post.publishedAt).toUTCString()
+        : new Date().toUTCString()
 
       return `
       <item>
