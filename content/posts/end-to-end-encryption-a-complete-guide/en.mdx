@@ -1,0 +1,102 @@
+---
+  title: "End-to-End Encryption (E2EE): A Complete Guide"
+  summary: How end-to-end encryption works, why it matters, and the mathematics that makes it unbreakable.
+  image: /images/posts/end-to-end-encryption-a-complete-guide/cover.png
+  author: 'Sameera Madushan'
+  publishedAt: '2026-04-27'
+  updatedAt:    '2026-04-27'
+  categories: [Cryptography, Security]
+---
+
+Every time you send a message, a piece of that message travels through servers, cables, and routers you'll never see or control. Somewhere along that invisible journey, someone, for example an engineer at a tech company, a hacker on the same Wi-Fi network, or a government agency could potentially intercept and read it.
+
+End-to-End Encryption (E2EE) exists to make that interception meaningless. It ensures that even if someone captures your message mid-flight, all they'll see is an indecipherable scramble of characters. Only the person you intended to reach can decode it.
+
+This article explains how E2EE works, why it matters, and the clever mathematics that makes it possible, without requiring a computer science degree to follow along.
+
+## The Problem: Why Regular Encryption Isn't Enough
+
+To understand what makes E2EE special, you first need to understand the limitation of ordinary encryption.
+
+Imagine two friends, Alice and Bob, chatting over a messaging app. Their messages don't travel directly from phone to phone. Instead, they pass through a central server operated by the app company.
+
+To protect Alice and Bob's messages from outside attackers, the app might encrypt communication between each user and the server. Alice shares a secret key with the server (call it Ka), and Bob shares a different secret key (call it Kb).
+
+Here's what happens when Bob sends Alice a message:
+
+![standard-encryption-flow](/images/posts/end-to-end-encryption-a-complete-guide/standard-encryption-flow.png)
+
+1. Bob encrypts his message using Kb and sends it to the server.
+2. The server decrypts Bob's message using Kb, so it can now read the message in plain text.
+3. The server re-encrypts the message using Ka.
+4. The re-encrypted message is sent to Alice, who decrypts it with Ka.
+
+The communication is encrypted in transit. But there's a critical vulnerability. **The server reads the message in step 2.** That means the service provider and anyone who gains access to their systems can see everything Alice and Bob say to each other.
+
+This is the gap that End-to-End Encryption closes.
+
+## What End-to-End Encryption Actually Does
+
+In a true E2EE system, the rule is simple:
+
+**A message is encrypted on the sender's device and can only be decrypted on the recipient's device. No one in between, not the server, not the app company, not a hacker, can read it.**
+
+The term "end-to-end" refers to the two endpoints in a conversation, the device that sends and the device that receives. Everything in the middle is just carrying an encrypted package it cannot open.
+
+![end-to-end-encryption](/images/posts/end-to-end-encryption-a-complete-guide/end-to-end-encryption.png)
+
+What makes this possible? The cryptographic keys used to encrypt and decrypt messages are stored only on Alice's and Bob's devices, never on the server. The server acts as a courier carrying a locked box, and only the recipient has the key to open it.
+
+## The Core Challenge: How Do Two Devices Agree on a Secret Key?
+
+There is a fundamental puzzle at the heart of E2EE. Before Alice and Bob can exchange encrypted messages, they need to agree on a shared secret key. But if they're communicating over a public network, how can they exchange that key without someone intercepting it?
+
+This seems like a circular problem. To securely share the key, you'd need... encryption. But you don't have the key yet. The solution, discovered in 1976, is one of the most elegant ideas in the history of mathematics.
+
+## The Diffie-Hellman Key Exchange
+
+In 1976, mathematicians Whitfield Diffie and Martin Hellman published a method that allows two parties to establish a shared secret over a completely public channel, even if every single message they send is intercepted.
+
+It sounds impossible. But It isn't.
+
+## Understanding It With Colors
+
+The easiest way to understand Diffie-Hellman is through a color-mixing analogy.
+
+![color-mixing-steps](/images/posts/end-to-end-encryption-a-complete-guide/color-mixing-steps.png)
+
+Step 1 — **The Public Color**: Alice and Bob agree on a shared public color. Let's say yellow. This is announced openly, so anyone can know it.
+
+Step 2 — **Private Colors**: Each person secretly picks their own private color. Let's say Alice picks red and Bob picks blue. This is kept secret.
+
+Step 3 —  **Mixing**: Each person mixes their private color with the public color, yellow. Alice mixes red with yellow, resulting in orange. Bob mixes blue with yellow, resulting in teal.
+
+They exchange these mixed colors publicly. An eavesdropper can see orange and teal, but cannot determine what private colors went into making them.
+
+Step 4 — **The Final Mix**: Alice takes the teal color she received from Bob and mixes in her private red color, producing a brown shade. Bob takes the orange color he received from Alice and mixes in his private blue color, which results in the same brown color as Alice’s.
+
+Both arrive at the identical final color, even though they never shared their private colors. This final color is their shared secret key.
+
+## Why an Eavesdropper Can’t Reverse It?
+
+An eavesdropper  watching the exchange sees the public value and the two intermediate results from Alice and Bob. To recover Alice’s private value, they would need to reverse the mathematical transformation used to generate the public result. In the real version of this system, this corresponds to the discrete logarithm problem in a finite cyclic group. With properly chosen large parameters, this problem is computationally infeasible for classical computers. In practice, Diffie–Hellman uses large numbers (typically 2048-bit or higher), and relies on modular exponentiation, which is easy to compute in one direction but extremely difficult to reverse.
+
+## From Key Exchange to Encrypted Messages
+
+Once Alice and Bob have established their shared secret key through Diffie-Hellman, they use it with a symmetric encryption algorithm (like AES-256) to encrypt every subsequent message.
+
+The flow looks like this:
+
+Phase 1 — **Key Establishment**: Alice and Bob perform a Diffie-Hellman exchange over the network. Neither their private values nor the final shared key ever cross the network. Only the intermediate "mixed colors" do.
+
+Phase 2 — **Encrypted Messaging**: All messages are encrypted on the sender's device using the shared key. The ciphertext travels through the server. The server forwards it to the recipient, who decrypts it with the same shared key on their own device.
+
+Modern apps like Signal, WhatsApp, and iMessage go a step further with what's called the Signal Protocol, which generates a new encryption key for every single message. This property called perfect forward secrecy (PFS) means that even if an attacker somehow obtained one key, they could only decrypt that one message, not an entire conversation history.
+
+## Summary
+
+End-to-End Encryption solves one of the fundamental problems of digital communication. How do you have a private conversation over a network you don't control?
+
+The answer lies in a deceptively clever mathematical trick called Diffie-Hellman key exchange. It lets two devices agree on a shared secret without ever sending that secret over the network. Once established, that secret is used to encrypt every message so thoroughly that not even the company delivering your messages can read them.
+
+It's the closest thing the digital world has to a sealed envelope, and with current technology, it remains computationally infeasible to break.
