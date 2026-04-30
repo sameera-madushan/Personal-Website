@@ -29,7 +29,7 @@ const navigation = [
   },
   {
     name: 'LinkedIn',
-    href: 'https://www.linkedin.com/in/sameera-madushan-perera',
+    href: 'https://www.linkedin.com/in/sameeramperera',
     icon: (props: JSX.IntrinsicAttributes & SVGProps<SVGSVGElement>) => (
       <svg fill='currentColor' viewBox='0 0 448 512' {...props}>
         <path
