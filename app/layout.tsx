@@ -75,8 +75,8 @@ export default function RootLayout({
     url: siteUrl,
     image: `${siteUrl}/images/authors/sameera.jpeg`,
     sameAs: [
-      "https://github.com/sameera-madushan",
-      "https://linkedin.com/in/sameera-madushan-perera",
+      "https://github.com/sameeramperera",
+      "https://linkedin.com/in/sameeramperera",
       "https://facebook.com/sameera.xyz.me"
     ],
     jobTitle: "Software Engineer",
