@@ -11,7 +11,7 @@ export default function Comments() {
     <div className="mt-20">
       <Giscus
         id="comments"
-        repo="sameera-madushan/Personal-Website"
+        repo="sameeramperera/Personal-Website"
         repoId="R_kgDOPexzFQ"
         category="Comments"
         categoryId="DIC_kwDOPexzFc4CugJD"

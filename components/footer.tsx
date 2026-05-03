@@ -50,7 +50,7 @@ const navigation = [
   },
   {
     name: 'GitHub',
-    href: 'https://github.com/sameera-madushan',
+    href: 'https://github.com/sameeramperera',
     icon: (props: JSX.IntrinsicAttributes & SVGProps<SVGSVGElement>) => (
       <svg fill='currentColor' viewBox='0 0 24 24' {...props}>
         <path
