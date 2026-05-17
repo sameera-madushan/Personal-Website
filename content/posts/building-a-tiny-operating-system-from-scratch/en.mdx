@@ -19,7 +19,7 @@ This project is being built step by step in small phases, with each phase focusi
 - [**Phase 1 - Bootloader + Screen Output**](#phase-1)
   - The first step is getting the system to actually boot. Writing a custom bootloader and printing directly to the screen using VGA memory, without any operating system support.
 
-- **Phase 2 - Protected Mode + GDT**
+- [**Phase 2 - Protected Mode + GDT**](#phase-2)
   - Switching the CPU from 16-bit real mode into 32-bit protected mode, setting up the Global Descriptor Table (GDT), and defining memory segments properly.
 
 - **Phase 3 - Interrupts + Keyboard**
@@ -169,3 +169,7 @@ After that, `dw 0xAA55` writes the final 2-byte boot signature at the end of the
 After building the bootloader, I tested it using QEMU to simulate how a real machine would boot the binary. I ran the command `"C:\Program Files\qemu\qemu-system-x86_64.exe" -drive format=raw,file=boot.bin`, which loads the boot.bin file as a raw disk image and starts the virtual machine. This allows me to see exactly how the BIOS would execute my bootloader in a real system. When QEMU starts, it successfully loads the boot sector and displays the output on the screen, confirming that the boot process and BIOS interrupts are working correctly.
 
 ![bootloader_running_qemu](/images/posts/building-a-tiny-operating-system-from-scratch/bootloader_running_qemu.png)
+
+## Phase 2 - Protected Mode + GDT <a id="phase-2"></a>
+
+Comming soon...
