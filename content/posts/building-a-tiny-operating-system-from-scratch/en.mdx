@@ -1,0 +1,171 @@
+---
+  title: "Building a Tiny Operating System from Scratch"
+  summary: Building a small operating system from scratch while exploring how computers work at the lowest level.
+  image: /images/posts/building-a-tiny-operating-system-from-scratch/cover.png
+  author: 'Sameera Madushan'
+  publishedAt: '2026-05-16'
+  updatedAt:    '2026-05-16'
+  categories: [Programming, Assembly, C, Operating System]
+---
+
+A long time ago, I read [*Operating System Concepts*](https://a.co/d/0hMSYMOi) by Abraham Silberschatz, Greg Gagne, and Peter Baer Galvin, and it sparked a deep curiosity in me about how operating systems actually work under the hood. Since then, I’ve wanted to build a small operating system from scratch to truly understand what happens at the lowest level of a computer system. 
+
+That curiosity eventually turned into this project, where I started building a small OS phase by phase, exploring everything from the boot process to memory management and process scheduling along the way. This article documents that journey as a timeline, capturing each phase of development, what I built, and what I learned while slowly working toward a working operating system.
+
+## Development Timeline
+
+This project is being built step by step in small phases, with each phase focusing on one core concept of operating system development. The goal is not speed, but understanding what each layer of a system actually does.
+
+- [**Phase 1 - Bootloader + Screen Output**](#phase-1)
+  - The first step is getting the system to actually boot. Writing a custom bootloader and printing directly to the screen using VGA memory, without any operating system support.
+
+- **Phase 2 - Protected Mode + GDT**
+  - Switching the CPU from 16-bit real mode into 32-bit protected mode, setting up the Global Descriptor Table (GDT), and defining memory segments properly.
+
+- **Phase 3 - Interrupts + Keyboard**
+  - Handling hardware interrupts, building basic keyboard input support, and allowing the system to respond to user input.
+
+- **Phase 4 - Memory Manager**
+  - Implementing a basic memory management system, understanding paging, and handling memory allocation in a kernel environment.
+
+- **Phase 5 - Processes + Scheduler**
+  - Introducing multitasking, creating simple processes, and building a basic scheduler to switch between processes.
+
+- **Phase 6 - Shell + Polish**
+  - Building a simple command-line shell on top of the kernel and polishing the system into a usable minimal OS environment.
+
+
+## Phase 1 : Bootloader + Screen Output <a id="phase-1"></a>
+
+Before we even write a single line of Assembly or C code, it’s important to understand what actually happens when a computer powers on, because everything we build later depends on this exact sequence.
+
+When you press the power button, the CPU begins execution from a fixed, hardware-defined address called the reset vector. On x86-64 machines, this address is always 0xFFFFFFF0, hardwired into the CPU itself. This address points to the firmware, which is stored in a non-volatile flash ROM chip soldered onto the motherboard, meaning it retains its contents even when the power is off. This is where execution actually begins.
+
+The firmware then runs a series of checks called POST (Power-On Self Test), verifying that essential hardware like RAM, CPU, and connected devices are working correctly. Once POST passes, the firmware begins searching through storage devices such as USB drives and hard disks, looking for something bootable. It reads the first 512 bytes of each device and checks if the last two bytes are 0x55 and 0xAA. This two-byte sequence is called the boot signature. Only if that signature is present does the firmware copy those 512 bytes into RAM at memory address 0x7C00 and jump to it, handing control over to whatever code is sitting there. That 512-byte region on disk is called the Master Boot Record (MBR), and the code living inside it is our bootloader.
+
+At this point, the CPU is running in real mode, a 16-bit execution environment that every x86-64 machine starts in for backward compatibility. In real mode there is no memory protection, no virtual memory, and a hard limit of 1 MB of addressable memory. The only help we have available is a set of firmware routines called BIOS interrupts, which allow us to do basic operations like printing to the screen and reading from disk without writing drivers ourselves. This is the environment our bootloader runs in, and everything we want to do at this stage must fit within those first 512 bytes.
+
+![boot_sequence_flowchart](/images/posts/building-a-tiny-operating-system-from-scratch/x86_boot_sequence_flowchart.svg)
+
+Now let us go through our bootloader code step by step and understand exactly what each part is doing.
+
+The full source code for this phase is available in the repository. You can view the exact commit here: [Phase 1 Bootloader Commit](https://github.com/sameeramperera/Toy-OS/commit/1bd1c9bafd7af0aaea57ac31938bfc525c3ec3d3)
+
+### *Also Read: [Assembly 101: How Programs Speak to the Machine](http://localhost:3000/posts/en/assembly-101-how-programs-speak-to-the-machine)*
+
+##### **Setting up the environment**
+
+The first thing we do is tell the assembler two important things. `[BITS 16]` tells it we are writing 16-bit code, meaning the default operand and address size for every instruction will be 16 bits. 
+
+This matters because the CPU powers on in real mode, which is a 16-bit execution environment. In real mode, the default integer operand size is 16 bits, so instructions like `mov ax, 5` move a 16-bit value. The registers available to us directly are the 16-bit ones: `ax, bx, cx, dx, si, di, sp, and bp.` We cannot use 32-bit registers like `eax` or `ebx` without special override prefixes, and we cannot address more than 1 MB of memory. 
+
+It is worth noting that `[BITS 16]` does not change the CPU behavior at all. It only tells NASM how to encode the instructions we write. If we wrote `[BITS 32]` but ran the code in real mode, the CPU would misinterpret every instruction because the byte sequences would mean something entirely different in that context. 
+
+`[ORG 0x7C00]` tells the assembler that our code will be loaded at address `0x7C00` in memory, so all labels and addresses must be calculated relative to that. To understand why our code lands at `0x7C00`, we need to understand how real mode addresses memory.
+
+In real mode, no single register can hold a full 20-bit address because all general-purpose registers are 16 bits wide. To access the full 1 MB memory space, the CPU combines a 16-bit segment and a 16-bit offset.
+
+- A segment (starting location)
+- An offset (distance from that starting location)
+
+The CPU calculates the final physical memory address using this formula:
+
+```
+Physical Address = (Segment × 16) + Offset
+```
+
+Multiplying by 16 shifts the segment left by one hexadecimal digit. For example:
+
+```
+0x7C0 × 16 = 0x7C00
+```
+
+So when the BIOS loads the bootloader, it sets:
+
+```
+Code Segment (CS) = 0x7C0
+Instruction Pointer (IP) = 0x0000
+```
+
+The CPU then calculates:
+
+```
+(0x7C0 × 16) + 0x0000 = 0x7C00
+```
+
+That is exactly where the bootloader is placed in RAM. Because of this, we use `[ORG 0x7C00]` so NASM knows our program starts at that physical address and can compute labels correctly. Then at the entry point we initialize the data segment (DS), extra segment (ES), and stack segment (SS) to 0, and set the stack pointer to `0x7C00`, giving ourselves a clean and predictable memory environment to work in.
+
+##### **Clearing the screen**
+
+Before printing anything, we first call `clear_screen`. This function uses BIOS video interrupt `0x10`, which provides a collection of built-in video services exposed by the BIOS while the CPU is still running in Real Mode.
+
+In x86 Real Mode, software can request services from the BIOS by triggering a software interrupt using the int instruction. The interrupt number determines which BIOS subsystem is being accessed.
+
+In this case `int 0x10` calls the BIOS video service interrupt. The BIOS video interrupt supports many different video-related operations such as:
+
+- setting video modes
+- printing characters
+- moving the cursor
+- scrolling the screen
+- changing colors
+
+The specific operation is selected by placing a function number into the `AH` register before calling the interrupt.
+
+```
+mov ah, 0x00
+```
+
+This means use BIOS video function 0x00 - Set Video Mode. The actual mode we want is then placed into `AL`.
+
+```
+mov al, 0x03
+```
+
+Mode 0x03 is the classic VGA text mode. This mode became a standard text display mode on IBM PC compatible systems and is still emulated by virtual machines like QEMU today.
+
+So in summary, When we execute `int 0x10`, the BIOS video service reads the CPU registers to decide what operation to perform. It first checks `AH` to determine the function number. In this case `AH = 0x00`, which means “Set Video Mode.” After identifying the function, it then reads `AL` as the parameter for that function. Since `AL = 0x03`, the BIOS switches the display into VGA text mode 3 (80x25), resetting and clearing the screen as part of the mode change.
+
+##### **Printing the message**
+
+Next we call `print_string`, which is responsible for displaying a full string on the screen one character at a time. At this stage, there is still no operating system support, so we rely on BIOS services and manual memory access.
+
+We begin by loading the address of our string into the `SI` register.
+
+- `SI` (Source Index) points to the current position in the string stored in memory
+- The string is stored as a sequence of ASCII characters ending with a null byte (`0x00`)
+
+The loop uses the instruction `lodsb`, which is one of the most important string operations in x86 assembly.
+
+In `lodsb`, the CPU does two things automatically:
+
+- Loads the byte at memory address `[SI]` into `AL`
+- Increments `SI` by 1 to point to the next character
+
+So effectively:
+
+```
+AL = [SI]
+SI = SI + 1
+```
+
+This makes it ideal for stepping through a string byte by byte without manual indexing.
+
+After loading each character, we check whether we have reached the end of the string by comparing the value in AL with zero using `cmp al, 0`. In this system, strings are stored as sequences of characters ending with a null byte `(0x00)`. If the comparison matches, it means we have reached the end of the string, and the instruction `je done` jumps to the end of the function to stop further processing.
+
+If the character is not zero, it is printed using BIOS interrupt `0x10`. We set `AH = 0x0E` to select the BIOS teletype output function, and the character to be printed is already in `AL` from the `lodsb` instruction. When `int 0x10` is executed, the BIOS reads these register values and prints the character stored in AL to the screen, automatically moving the cursor forward.
+
+Before calling the interrupt, we also set `BL = 0x04`, which controls the text attribute used by the BIOS teletype function. This value defines the color of the text being printed. In this case, `0x04` represents red text on a black background. The BIOS uses this value when rendering the character to determine how it should appear on the screen, affecting the visual output of each printed character.
+
+##### **Hanging the CPU**
+
+Once the message has been printed, execution is transferred to the `hang` label. At this point, the bootloader has completed its task, so we stop the CPU from doing any further work. We first disable hardware interrupts using `cli`, which prevents any external events (like keyboard or timer interrupts) from disturbing the CPU state. Then we execute `hlt`, which puts the CPU into a halted state where it stops executing instructions and waits for an interrupt. However, to ensure the system remains in this state permanently, we place an infinite loop using `jmp hang`. This means that even if the CPU is ever woken up by an interrupt, it will immediately return to the halt state. This is effectively our way of saying that the bootloader has finished its job and there is nothing more to execute.
+
+##### **Padding and boot signature**
+
+Finally, `times 510 - ($ - $$) db 0` is used to pad the boot sector with zero bytes until it reaches exactly 510 bytes of actual code and data. The BIOS requires the boot sector to always be 512 bytes in total, so we must carefully control its size. Here, `$` represents the current position in the file and `$$` represents the start of the section, so the expression calculates how many bytes are left until we reach the 510-byte limit and fills that space with zeros.
+
+After that, `dw 0xAA55` writes the final 2-byte boot signature at the end of the sector (bytes 511 and 512). This signature is critical because the BIOS checks for it before attempting to execute the bootloader. If these two bytes are not present, the BIOS will consider the sector invalid and will refuse to boot from it, skipping to the next boot device instead.
+
+After building the bootloader, I tested it using QEMU to simulate how a real machine would boot the binary. I ran the command `"C:\Program Files\qemu\qemu-system-x86_64.exe" -drive format=raw,file=boot.bin`, which loads the boot.bin file as a raw disk image and starts the virtual machine. This allows me to see exactly how the BIOS would execute my bootloader in a real system. When QEMU starts, it successfully loads the boot sector and displays the output on the screen, confirming that the boot process and BIOS interrupts are working correctly.
+
+![bootloader_running_qemu](/images/posts/building-a-tiny-operating-system-from-scratch/bootloader_running_qemu.png)
